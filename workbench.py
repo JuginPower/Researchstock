@@ -22,16 +22,21 @@ n = 5
 
 for ax, indi in zip(subplots, indicators):
     my_plotter(ax, indi.get_timeframed_dates()[-abs(i):-abs(i)+i-1], indi.get_timeframed_prices()[-abs(i):-abs(i)+i-1], {"label": "price", "c": "green"})
+    my_plotter(ax, indi.get_timeframed_dates()[-abs(i):-abs(i)+i-1], indi.compute_ema(8)[-abs(i):-abs(i)+i-1], {"label": "ema8", "c": "red"})
+    my_plotter(ax, indi.get_timeframed_dates()[-abs(i):-abs(i)+i-1], indi.compute_ema(21)[-abs(i):-abs(i) + i - 1], {"label": "ema21", "c": "blue"})
+    my_plotter(ax, indi.get_timeframed_dates()[-abs(i):-abs(i)+i-1], indi.compute_ema(200)[-abs(i):-abs(i) + i - 1], {"label": "ema200", "c": "black"})
 
-plt.show() # Bis hier hin klappt es
+    ax.legend()
+    ax.tick_params(axis='x', labelrotation=90)
+    ax.grid(True)
+
+    for index, label in enumerate(ax.xaxis.get_ticklabels()):
+        if index % n != 0:
+            label.set_visible(False)
+
+
+plt.show()
 """
-cleaned_dates = indicator_object.get_timeframed_dates()
-cleaned_prices = indicator_object.get_timeframed_prices()
-ema8 = indicator_object.compute_ema(8)
-ema21 = indicator_object.compute_ema(21)
-ema200 = indicator_object.compute_ema(200)
-
-
 my_plotter(ax1, cleaned_dates[-abs(i):-abs(i)+i-1], cleaned_prices[-abs(i):-abs(i)+i-1], {"label": "price", "c": "green"})
 my_plotter(ax2, cleaned_dates[-abs(i):-abs(i)+i-1], cleaned_prices[-abs(i):-abs(i)+i-1], {"label": "price", "c": "green"})
 my_plotter(ax2, cleaned_dates[-abs(i):-abs(i)+i-1], ema8[-abs(i):-abs(i)+i-1], {"label": "ema8", "c": "red"})
