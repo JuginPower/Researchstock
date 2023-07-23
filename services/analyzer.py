@@ -5,16 +5,20 @@ from copy import copy
 
 class Indicator:
 
-    def __init__(self, dates, prices, timeframe):
+    def __init__(self, dates, prices, timeframe, index=None):
 
         self._orig_dates = dates[:]
         self._orig_prices = prices[:]
 
         self._timeframe = timeframe
+        self._index = index
 
         selected_data = self.__time_conduit()
         self._dates = selected_data["dates"][:]
         self._prices = selected_data["prices"][:]
+
+        if not self._index:
+            self._index = self.__ask_date()
 
     def __time_conduit(self):
 
@@ -103,6 +107,50 @@ class Indicator:
 
         return {"sma": sma, "std": stds}
 
+    def __ask_date(self):
+
+        """Date String without Seconds (%Y-%m-%d %H:%M)"""
+
+        while True:
+
+            try:
+                print("You can also type in 'last' or 'first' for the first or last 200 records")
+                rough_answer = input(f"desired date for {self._timeframe} timeframe in (yyyy-mm-dd hh:mm) ")
+
+                if rough_answer == 'last':
+                    return {'start': -200 or 0, 'end': self._dates.index(self._dates[-1])}
+                if rough_answer == 'first':
+                    return {'start': 0, 'end': 200 or self._dates.index(self._dates[-1])}
+
+                custom_date_obj = datetime.strptime(rough_answer, "%Y-%m-%d %H:%M")
+                custom_date = custom_date_obj.strftime("%Y-%m-%d %H:%M")
+
+            except ValueError as valerr:
+                print(valerr)
+                print("Try again!")
+                continue
+
+            for i, date in enumerate(self._dates):
+
+                custom_timestamp = int(custom_date_obj.timestamp())
+                database_timestamp = int(datetime.strptime(date, "%Y-%m-%d %H:%M:%S").timestamp())
+
+                if database_timestamp > custom_timestamp:
+                    result = {'start': i}
+                    end_index = i + 200
+
+                    try:
+                        try_val = self._dates[end_index]
+                        result.update({'end': end_index})
+                    except IndexError:
+                        end_index = self._dates.index(self._dates[-1])
+                        result.update({'end': end_index})
+
+                    return result
+
+            print(f"Not such date: {custom_date}!")
+            continue
+
     def compute_bolinger_bands(self, period=20, factor=2):
 
         datadict = self.__compute_sma_std(closes=self._prices, period=period)
@@ -163,7 +211,8 @@ class Indicator:
 
                     real_ema = price * smoothfactor + emas[-1] * (1 - smoothfactor)
                     emas.append(round(real_ema, 2))
-
+        if self._index:
+            return emas[self._index['start']:self._index['end']]
         return emas
 
     def compute_keltner_tunnel(self, period=20, factor=1.5):
@@ -257,10 +306,14 @@ class Indicator:
 
     def get_timeframed_dates(self):
 
+        if self._index:
+            return self._dates[self._index['start']:self._index['end']]
         return self._dates
 
     def get_timeframed_prices(self):
 
+        if self._index:
+            return self._prices[self._index['start']:self._index['end']]
         return self._prices
 
     def get_orig_dates(self):
